@@ -192,37 +192,74 @@
             placeRandomObject('cylinder', textures.diamond, [-5, 5], [0, 5],  [-5, 0]);
         }
 
-        // Load Custom 3D Model (Windmill)
         const objLoader = new THREE.OBJLoader();
+        // Load Custom 3D Model (Skyscraper)
+        // Building #1
         objLoader.load('skyscarp.obj', function (object) {
             object.position.set(-8, -3, -6);
             object.scale.set(0.05, 0.05, 0.05);
-            object.castShadow = true;
-            object.receiveShadow = true;
+
+            // Assign a random color to each mesh in this OBJ
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: Math.random() * 0xffffff
+                    });
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
             scene.add(object);
         });
 
+        // Building #2
         objLoader.load('skyscarp.obj', function (object) {
             object.position.set(-3, -3, -6);
             object.scale.set(0.05, 0.05, 0.05);
-            object.castShadow = true;
-            object.receiveShadow = true;
+
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: Math.random() * 0xffffff
+                    });
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
             scene.add(object);
         });
 
+        // Building #3
         objLoader.load('skyscarp.obj', function (object) {
             object.position.set(2, -3, -6);
             object.scale.set(0.05, 0.05, 0.05);
-            object.castShadow = true;
-            object.receiveShadow = true;
+
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: Math.random() * 0xffffff
+                    });
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
             scene.add(object);
         });
 
+        // Building #4
         objLoader.load('skyscarp.obj', function (object) {
             object.position.set(7, -3, -6);
             object.scale.set(0.05, 0.05, 0.05);
-            object.castShadow = true;
-            object.receiveShadow = true;
+
+            object.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: Math.random() * 0xffffff
+                    });
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
             scene.add(object);
         });
 
