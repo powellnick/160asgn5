@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Three.js World Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/loaders/OBJLoader.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        .controls {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px; border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <label>Field of View: <input type="range" id="fov" min="30" max="120" value="75"></label><br>
+        <label>Near Clipping: <input type="range" id="near" min="0.1" max="10" step="0.1" value="0.1"></label><br>
+        <label>Far Clipping: <input type="range" id="far" min="100" max="2000" step="50" value="1000"></label><br>
+        <label>Red: <input type="range" id="red" min="0" max="255" value="255"></label><br>
+        <label>Green: <input type="range" id="green" min="0" max="255" value="255"></label><br>
+        <label>Blue: <input type="range" id="blue" min="0" max="255" value="255"></label><br>
+        <label>Brightness: <input type="range" id="brightness" min="0.1" max="2" step="0.1" value="1"></label><br>
+        <label>Spotlight Intensity: <input type="range" id="spotlightIntensity" min="0" max="2" step="0.1" value="1"></label><br>
+        <button id="toggleCamera">Toggle Camera</button>
+    </div>
+
+    <script>
+        // Create Scene
+        const scene = new THREE.Scene();
+
+        // Initialize Texture Loader FIRST
+        const loader = new THREE.TextureLoader();
+
+        // Create a single skybox using sky.png
+        const skyTexture = loader.load('sky.png');
+        const skyboxGeometry = new THREE.BoxGeometry(1000, 1000, 1000);
+        const skyboxMaterials = [
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide }),
+            new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide })
+        ];
+        const skybox = new THREE.Mesh(skyboxGeometry, skyboxMaterials);
+        scene.add(skybox);
+
+        // Create Cameras
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 10;
+
+        const secondCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        secondCamera.position.set(0, 15, 10);
+        secondCamera.lookAt(scene.position);
+
+        // Create Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Load Textures
+        const textures = {
+            wood:    loader.load('wood.png'),
+            stone:   loader.load('stone.png'),
+            grass:   loader.load('grass.png'),
+            dirt:    loader.load('dirt.png'),
+            gold:    loader.load('gold.png'),
+            iron:    loader.load('iron.png'),
+            diamond: loader.load('diamond.png')
+        };
+
+        // Create terrain
+        const terrainGeometry = new THREE.PlaneGeometry(20, 20);
+        const terrainMaterial = new THREE.MeshStandardMaterial({ map: textures.grass });
+        const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.position.y = -3;
+        terrain.receiveShadow = true;
+        scene.add(terrain);
+
+        function createTexturedCube(texture, position) {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ map: texture });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(...position);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
+            scene.add(cube);
+        }
+
+        function createTexturedSphere(texture, position) {
+            const geometry = new THREE.SphereGeometry(0.8, 32, 32);
+            const material = new THREE.MeshStandardMaterial({ map: texture });
+            const sphere = new THREE.Mesh(geometry, material);
+            sphere.position.set(...position);
+            sphere.castShadow = true;
+            sphere.receiveShadow = true;
+            scene.add(sphere);
+        }
+
+        function createTexturedCylinder(texture, position) {
+            const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 32);
+            const material = new THREE.MeshStandardMaterial({ map: texture });
+            const cylinder = new THREE.Mesh(geometry, material);
+            cylinder.position.set(...position);
+            cylinder.castShadow = true;
+            cylinder.receiveShadow = true;
+            scene.add(cylinder);
+        }
+
+        const boundingSpheres = {
+            cube: 0.866,      // ~ distance from center to corner of 1x1x1
+            sphere: 0.8,      // sphere radius
+            cylinder: 0.9     // ~ covers half-height + radius
+        };
+
+        // Keep track of placed objects: { x, y, z, radius }
+        const placedObjects = [];
+
+        function isTooClose(pos, r) {
+            const margin = 0.1; // extra space
+            for (let obj of placedObjects) {
+                const dx = obj.x - pos[0];
+                const dy = obj.y - pos[1];
+                const dz = obj.z - pos[2];
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist < obj.radius + r + margin) {
+                    return true; // They overlap or are too close
+                }
+            }
+            return false;
+        }
+
+        function placePresetObject(type, texture, position) {
+            // Use the appropriate create function
+            switch(type) {
+                case 'cube': createTexturedCube(texture, position); break;
+                case 'sphere': createTexturedSphere(texture, position); break;
+                case 'cylinder': createTexturedCylinder(texture, position); break;
+            }
+            // Add to placedObjects so future objects won't collide
+            placedObjects.push({
+                x: position[0],
+                y: position[1],
+                z: position[2],
+                radius: boundingSpheres[type]
+            });
+        }
+
+        // Try up to N times to find a collision-free position.
+        function placeRandomObject(type, texture, xRange, yRange, zRange) {
+            const maxTries = 100;
+            for (let i = 0; i < maxTries; i++) {
+                const x = Math.random() * (xRange[1] - xRange[0]) + xRange[0];
+                const y = Math.random() * (yRange[1] - yRange[0]) + yRange[0];
+                const z = Math.random() * (zRange[1] - zRange[0]) + zRange[0];
+                if (!isTooClose([x, y, z], boundingSpheres[type])) {
+                    // Found a good spot, place it
+                    switch(type) {
+                        case 'cube': createTexturedCube(texture, [x, y, z]); break;
+                        case 'sphere': createTexturedSphere(texture, [x, y, z]); break;
+                        case 'cylinder': createTexturedCylinder(texture, [x, y, z]); break;
+                    }
+                    // Store in placedObjects
+                    placedObjects.push({ x, y, z, radius: boundingSpheres[type] });
+                    break; // Done placing this object
+                }
+            }
+        }
+
+        // Place Preset Objects
+        placePresetObject('cube', textures.wood,    [-3,  0,   0]);
+        placePresetObject('cube', textures.stone,   [ 0,  0,   0]);
+        placePresetObject('cube', textures.grass,   [ 3,  0,   0]);
+        placePresetObject('cube', textures.dirt,    [-3,  3,   0]);
+        placePresetObject('cube', textures.gold,    [ 0,  3,   0]);
+        placePresetObject('cube', textures.iron,    [ 3,  3,   0]);
+        placePresetObject('cube', textures.diamond, [ 0, -2.5, 0]);
+        placedObjects.push({ x: 0, y: -2.75, z: -5, radius: 5.0 });
+
+        // Place Random Objects
+        for (let i = 0; i < 10; i++) {
+            placeRandomObject('cube',     textures.iron,    [-5, 5], [0, 5],  [-5, 0]);
+            placeRandomObject('sphere',   textures.grass,   [-5, 5], [0, 5],  [-5, 0]);
+            placeRandomObject('cylinder', textures.diamond, [-5, 5], [0, 5],  [-5, 0]);
+        }
+
+        // Load Custom 3D Model (Windmill)
+        const objLoader = new THREE.OBJLoader();
+        objLoader.load('skyscarp.obj', function (object) {
+            object.position.set(-8, -3, -6);
+            object.scale.set(0.05, 0.05, 0.05);
+            object.castShadow = true;
+            object.receiveShadow = true;
+            scene.add(object);
+        });
+
+        objLoader.load('skyscarp.obj', function (object) {
+            object.position.set(-3, -3, -6);
+            object.scale.set(0.05, 0.05, 0.05);
+            object.castShadow = true;
+            object.receiveShadow = true;
+            scene.add(object);
+        });
+
+        objLoader.load('skyscarp.obj', function (object) {
+            object.position.set(2, -3, -6);
+            object.scale.set(0.05, 0.05, 0.05);
+            object.castShadow = true;
+            object.receiveShadow = true;
+            scene.add(object);
+        });
+
+        objLoader.load('skyscarp.obj', function (object) {
+            object.position.set(7, -3, -6);
+            object.scale.set(0.05, 0.05, 0.05);
+            object.castShadow = true;
+            object.receiveShadow = true;
+            scene.add(object);
+        });
+
+        // Lights
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 5, 5);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xff0000, 1, 10);
+        pointLight.position.set(2, 2, 2);
+        pointLight.castShadow = true;
+        scene.add(pointLight);
+
+        const spotLight = new THREE.SpotLight(0x00ff00, 1);
+        spotLight.position.set(-3, 5, 3);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // Orbit Controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Raycaster for picking
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        window.addEventListener('click', onMouseClick, false);
+
+        function onMouseClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, activeCamera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            if (intersects.length > 0) {
+                const selectedObject = intersects[0].object;
+                selectedObject.material.color.set(Math.random() * 0xffffff);
+                console.log('Picked object:', selectedObject);
+            }
+        }
+
+        // Camera switching
+        let activeCamera = camera;
+        document.getElementById('toggleCamera').addEventListener('click', () => {
+            activeCamera = (activeCamera === camera) ? secondCamera : camera;
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, activeCamera);
+        }
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            secondCamera.aspect = window.innerWidth / window.innerHeight;
+            secondCamera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Camera sliders
+        document.getElementById('fov').addEventListener('input', (event) => {
+            camera.fov = event.target.value;
+            camera.updateProjectionMatrix();
+        });
+        document.getElementById('near').addEventListener('input', (event) => {
+            camera.near = parseFloat(event.target.value);
+            camera.updateProjectionMatrix();
+        });
+        document.getElementById('far').addEventListener('input', (event) => {
+            camera.far = parseFloat(event.target.value);
+            camera.updateProjectionMatrix();
+        });
+
+        // Light color & brightness
+        function updateLightColor() {
+            const r = document.getElementById('red').value / 255;
+            const g = document.getElementById('green').value / 255;
+            const b = document.getElementById('blue').value / 255;
+            directionalLight.color.setRGB(r, g, b);
+        }
+        function updateBrightness() {
+            directionalLight.intensity = document.getElementById('brightness').value;
+        }
+        document.getElementById('red').addEventListener('input', updateLightColor);
+        document.getElementById('green').addEventListener('input', updateLightColor);
+        document.getElementById('blue').addEventListener('input', updateLightColor);
+        document.getElementById('brightness').addEventListener('input', updateBrightness);
+        document.getElementById('spotlightIntensity').addEventListener('input', (event) => {
+            spotLight.intensity = parseFloat(event.target.value);
+        });
+    </script>
+</body>
+</html>

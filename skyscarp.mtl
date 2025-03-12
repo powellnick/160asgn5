@@ -1,0 +1,64 @@
+# Blender 4.3.2 MTL File: 'untitled.blend'
+# www.blender.org
+
+newmtl Emmsive
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+illum 2
+map_Kd /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/TEXTURE ATLAS.png
+map_Ke /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/ref.png
+map_d /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/TEXTURE ATLAS.png
+
+newmtl GLASS_BUILDING
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Building.png
+map_Ns /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Building Roughness.png
+map_Bump -bm 1.000000 /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Building Normal.png
+
+newmtl Interior
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/interior/baked.png
+map_Ke /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/interior/light bake.png
+
+newmtl Red_Beam
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.450000
+illum 2
+map_Kd /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Light beam.png
+map_Ke /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Light beam.png
+map_d /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/Light beam.png
+
+newmtl Trimsheet
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/BuildingTrimsheet.png
+map_Ns /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/BuildingTrimsheet Roughness.png
+map_Bump -bm 1.000000 /private/var/folders/bz/gc991yvd0zg7z9mrymfx2y3c0000gn/T/wzQL.kCWPXA/HSBC/BuildingTrimsheetNormal.png
+
+newmtl temp
+Ns 412.423218
+Ka 1.000000 1.000000 1.000000
+Kd 0.358838 0.358838 0.358838
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
